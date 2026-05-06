@@ -1,0 +1,6 @@
+services:
+  api:
+    ports:
+      - "9090:9090"
+    environment:
+      LOG_LEVEL: debug

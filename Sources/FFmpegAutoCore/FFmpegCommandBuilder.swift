@@ -4,7 +4,22 @@ public struct FFmpegCommandBuilder {
     public init() {}
 
     public func build(from conversion: ValidatedConversion) -> FFmpegCommand {
-        var arguments = ["-i", conversion.inputFile.path]
+        var arguments: [String] = []
+
+        // -ss before -i = input-seek (fast). With ffmpeg >= 4.0 this is also accurate
+        // to the sub-second, so we don't need -accurate_seek.
+        if let start = conversion.trimStartSeconds, start > 0 {
+            arguments += ["-ss", Self.formatTimestamp(start)]
+        }
+
+        arguments += ["-i", conversion.inputFile.path]
+
+        // -to after -i is interpreted as an absolute timestamp on the input when used
+        // together with -ss before -i, which is the behaviour we want.
+        if let end = conversion.trimEndSeconds {
+            arguments += ["-to", Self.formatTimestamp(end)]
+        }
+
         let settings = conversion.settings
 
         if settings.collisionPolicy == .overwriteMatchingSegments {
@@ -58,5 +73,12 @@ public struct FFmpegCommandBuilder {
             return value
         }
         return "\"\(value.replacingOccurrences(of: "\"", with: "\\\""))\""
+    }
+
+    /// Formats a seconds value with millisecond precision in the form `12.345`.
+    /// ffmpeg accepts both `HH:MM:SS.mmm` and decimal-seconds notation; the latter is
+    /// shorter and avoids ambiguity when the value is interpreted by display code.
+    public static func formatTimestamp(_ seconds: Double) -> String {
+        String(format: "%.3f", seconds)
     }
 }

@@ -14,6 +14,8 @@ public struct JobSubmitDTO: Codable, Sendable {
     public var collisionPolicy: String?
     public var loudnessNormalizationEnabled: Bool?
     public var extraFFmpegArguments: String?
+    public var trimStartSeconds: Double?
+    public var trimEndSeconds: Double?
 
     public func toSettings() throws -> AudioConversionSettings {
         guard let codecValue = AudioCodec(rawValue: codec) else {
@@ -39,7 +41,9 @@ public struct JobSubmitDTO: Codable, Sendable {
             collisionPolicy: policyValue,
             loudnessNormalizationEnabled: loudnessNormalizationEnabled ?? false,
             extraFFmpegArgumentsText: extraFFmpegArguments ?? "",
-            ffmpegPathOverride: ""
+            ffmpegPathOverride: "",
+            trimStartSeconds: trimStartSeconds,
+            trimEndSeconds: trimEndSeconds
         )
     }
 }

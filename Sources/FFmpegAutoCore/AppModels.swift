@@ -102,6 +102,8 @@ public struct AudioConversionSettings: Equatable {
     public var loudnessNormalizationEnabled: Bool
     public var extraFFmpegArgumentsText: String
     public var ffmpegPathOverride: String
+    public var trimStartSeconds: Double?
+    public var trimEndSeconds: Double?
 
     public init(
         audioOnly: Bool,
@@ -115,7 +117,9 @@ public struct AudioConversionSettings: Equatable {
         collisionPolicy: OutputCollisionPolicy,
         loudnessNormalizationEnabled: Bool,
         extraFFmpegArgumentsText: String,
-        ffmpegPathOverride: String
+        ffmpegPathOverride: String,
+        trimStartSeconds: Double? = nil,
+        trimEndSeconds: Double? = nil
     ) {
         self.audioOnly = audioOnly
         self.codec = codec
@@ -129,6 +133,8 @@ public struct AudioConversionSettings: Equatable {
         self.loudnessNormalizationEnabled = loudnessNormalizationEnabled
         self.extraFFmpegArgumentsText = extraFFmpegArgumentsText
         self.ffmpegPathOverride = ffmpegPathOverride
+        self.trimStartSeconds = trimStartSeconds
+        self.trimEndSeconds = trimEndSeconds
     }
 
     public static let transcriptionDefault = AudioConversionSettings(
@@ -146,6 +152,9 @@ public struct AudioConversionSettings: Equatable {
         ffmpegPathOverride: ""
     )
 }
+
+/// Smallest meaningful clip duration accepted by the trim feature, in seconds.
+public let minimumTrimRangeSeconds: Double = 1.0
 
 public struct FFmpegLocation: Equatable {
     public let executableURL: URL?
@@ -182,8 +191,20 @@ public struct ValidatedConversion: Equatable {
     public let outputPattern: URL
     public let settings: AudioConversionSettings
     public let extraFFmpegArguments: [String]
+    public let trimStartSeconds: Double?
+    public let trimEndSeconds: Double?
 
-    public init(inputFile: URL, outputFolder: URL, segmentMinutes: Int, ffmpegExecutableURL: URL, outputPattern: URL, settings: AudioConversionSettings = .transcriptionDefault, extraFFmpegArguments: [String] = []) {
+    public init(
+        inputFile: URL,
+        outputFolder: URL,
+        segmentMinutes: Int,
+        ffmpegExecutableURL: URL,
+        outputPattern: URL,
+        settings: AudioConversionSettings = .transcriptionDefault,
+        extraFFmpegArguments: [String] = [],
+        trimStartSeconds: Double? = nil,
+        trimEndSeconds: Double? = nil
+    ) {
         self.inputFile = inputFile
         self.outputFolder = outputFolder
         self.segmentMinutes = segmentMinutes
@@ -192,6 +213,21 @@ public struct ValidatedConversion: Equatable {
         self.outputPattern = outputPattern
         self.settings = settings
         self.extraFFmpegArguments = extraFFmpegArguments
+        self.trimStartSeconds = trimStartSeconds
+        self.trimEndSeconds = trimEndSeconds
+    }
+
+    /// Effective duration of the produced clip when a trim is applied, given the probed
+    /// duration of the original file. Returns `nil` when neither trim nor probe are known.
+    public func effectiveDurationSeconds(probedDuration: Double?) -> Double? {
+        let start = trimStartSeconds ?? 0
+        if let end = trimEndSeconds {
+            return max(0, end - start)
+        }
+        if let probed = probedDuration {
+            return max(0, probed - start)
+        }
+        return nil
     }
 }
 
@@ -213,6 +249,10 @@ public enum AppValidationError: LocalizedError, Equatable {
     case invalidSampleRate(Int)
     case invalidFilenamePrefix
     case invalidExtraFFmpegArguments(String)
+    case trimStartNegative
+    case trimEndNotAfterStart
+    case trimRangeTooShort(minimumSeconds: Double)
+    case trimEndBeyondDuration(duration: Double, end: Double)
 
     public var errorDescription: String? {
         switch self {
@@ -250,6 +290,14 @@ public enum AppValidationError: LocalizedError, Equatable {
             return "Filename prefix cannot be empty after sanitising. Use a simple prefix such as meeting."
         case .invalidExtraFFmpegArguments(let reason):
             return "Custom FFmpeg arguments are invalid: \(reason)"
+        case .trimStartNegative:
+            return "Trim start time cannot be negative."
+        case .trimEndNotAfterStart:
+            return "Trim end time must be greater than the start time."
+        case .trimRangeTooShort(let minimumSeconds):
+            return "Trim range is too short. The clip must be at least \(String(format: "%.1f", minimumSeconds)) seconds long."
+        case .trimEndBeyondDuration(let duration, let end):
+            return "Trim end (\(String(format: "%.3f", end))s) is beyond the media duration (\(String(format: "%.3f", duration))s)."
         }
     }
 }

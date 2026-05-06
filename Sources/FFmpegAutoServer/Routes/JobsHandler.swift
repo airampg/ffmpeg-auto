@@ -41,6 +41,7 @@ struct JobsHandler: Sendable {
             do {
                 _ = try validator.validateSegmentMinutes(String(dto.segmentMinutes))
                 try validator.validateAudioSettings(settings)
+                try validator.validateTrim(settings: settings, probedDuration: nil)
                 _ = try validator.parseExtraFFmpegArguments(settings.extraFFmpegArgumentsText)
             } catch let validation as AppValidationError {
                 throw APIError.validation(validation)

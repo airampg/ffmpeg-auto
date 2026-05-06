@@ -195,10 +195,28 @@ public actor JobOrchestrator {
             return
         }
 
+        var probedDuration: Double?
         if let probeService {
-            let duration = await probeService.probeDuration(of: conversion.inputFile)
-            await store.update(id) { $0.totalDurationSeconds = duration }
+            probedDuration = await probeService.probeDuration(of: conversion.inputFile)
         }
+
+        if let probedDuration {
+            do {
+                try validator.validateTrim(settings: conversion.settings, probedDuration: probedDuration)
+            } catch let error as AppValidationError {
+                await markFailed(id, message: error.errorDescription ?? "Trim validation failed.")
+                return
+            } catch {
+                await markFailed(id, message: error.localizedDescription)
+                return
+            }
+        }
+
+        // For progress reporting we want the total duration to reflect the clip
+        // ffmpeg actually produces, not the source file. With -ss before -i, ffmpeg
+        // emits 0-based output timestamps so currentTime is already clip-relative.
+        let effectiveDuration = conversion.effectiveDurationSeconds(probedDuration: probedDuration) ?? probedDuration
+        await store.update(id) { $0.totalDurationSeconds = effectiveDuration }
 
         let command = commandBuilder.build(from: conversion)
         let display = commandBuilder.displayTemplate(for: conversion)

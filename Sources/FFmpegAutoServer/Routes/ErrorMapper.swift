@@ -83,6 +83,8 @@ public enum APIError: Error, Sendable {
         case .invalidSampleRate: return "INVALID_SAMPLE_RATE"
         case .invalidFilenamePrefix: return "INVALID_PREFIX"
         case .invalidExtraFFmpegArguments: return "INVALID_EXTRAS"
+        case .trimStartNegative, .trimEndNotAfterStart, .trimRangeTooShort: return "INVALID_TRIM"
+        case .trimEndBeyondDuration: return "TRIM_BEYOND_DURATION"
         }
     }
 }

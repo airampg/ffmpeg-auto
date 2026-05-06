@@ -5,6 +5,7 @@ import Hummingbird
 func buildRouter(
     configuration: Configuration,
     probe: FFmpegProbe,
+    probeService: ProbeService?,
     orchestrator: JobOrchestrator,
     store: JobStore,
     uploadStore: UploadStore,
@@ -24,6 +25,11 @@ func buildRouter(
     )
     let logs = LogsHandler(store: store, orchestrator: orchestrator)
     let zip = ZipHandler(store: store, workdir: workdir)
+    let probeHandler = ProbeHandler(
+        configuration: configuration,
+        probeService: probeService,
+        workdir: workdir
+    )
 
     router.get("/api/v1/health") { request, context in
         try await health.handle(request, context: context)
@@ -31,6 +37,10 @@ func buildRouter(
 
     router.get("/api/v1/capabilities") { request, context in
         try await capabilities.handle(request, context: context)
+    }
+
+    router.post("/api/v1/probe") { request, context in
+        try await probeHandler.probe(request, context: context)
     }
 
     router.post("/api/v1/jobs") { request, context in

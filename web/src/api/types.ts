@@ -103,4 +103,6 @@ export interface JobSubmitSettings {
   collisionPolicy?: string;
   loudnessNormalizationEnabled?: boolean;
   extraFFmpegArguments?: string;
+  trimStartSeconds?: number;
+  trimEndSeconds?: number;
 }

@@ -19,6 +19,7 @@ public struct ValidationService {
         let segmentMinutes = try validateSegmentMinutes(context.segmentMinutesText)
         let settings = context.settings
         try validateAudioSettings(settings)
+        try validateTrim(settings: settings, probedDuration: nil)
         let extraArguments = try parseExtraFFmpegArguments(settings.extraFFmpegArgumentsText)
         guard let ffmpegExecutableURL = context.ffmpegLocation.executableURL else {
             throw AppValidationError.missingFFmpeg(checkedPaths: context.ffmpegLocation.checkedPaths)
@@ -53,8 +54,38 @@ public struct ValidationService {
             ffmpegExecutableURL: ffmpegExecutableURL,
             outputPattern: namingService.outputPattern(inputFile: inputFile, outputFolder: outputFolder, settings: settings),
             settings: settings,
-            extraFFmpegArguments: extraArguments
+            extraFFmpegArguments: extraArguments,
+            trimStartSeconds: settings.trimStartSeconds,
+            trimEndSeconds: settings.trimEndSeconds
         )
+    }
+
+    /// Validates the trim window. When `probedDuration` is provided, also checks that the
+    /// end timestamp does not exceed the actual media duration (with 0.5s tolerance for
+    /// rounding).
+    public func validateTrim(settings: AudioConversionSettings, probedDuration: Double?) throws {
+        let start = settings.trimStartSeconds
+        let end = settings.trimEndSeconds
+
+        if let start, !start.isFinite || start < 0 {
+            throw AppValidationError.trimStartNegative
+        }
+        if let end, !end.isFinite || end < 0 {
+            throw AppValidationError.trimStartNegative
+        }
+
+        if let start, let end {
+            guard end > start else {
+                throw AppValidationError.trimEndNotAfterStart
+            }
+            guard (end - start) >= minimumTrimRangeSeconds else {
+                throw AppValidationError.trimRangeTooShort(minimumSeconds: minimumTrimRangeSeconds)
+            }
+        }
+
+        if let probedDuration, probedDuration > 0, let end, end > probedDuration + 0.5 {
+            throw AppValidationError.trimEndBeyondDuration(duration: probedDuration, end: end)
+        }
     }
 
     public func validateSegmentMinutes(_ text: String) throws -> Int {

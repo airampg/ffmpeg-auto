@@ -46,6 +46,7 @@ struct FFmpegAutoServerEntry {
         let router = buildRouter(
             configuration: configuration,
             probe: probe,
+            probeService: probeService,
             orchestrator: orchestrator,
             store: store,
             uploadStore: uploadStore,
