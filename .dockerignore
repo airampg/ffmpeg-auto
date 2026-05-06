@@ -1,0 +1,15 @@
+.build/
+.swiftpm/
+build/
+.git/
+.github/
+.claude/
+docs/
+node_modules/
+web/node_modules/
+web/dist/
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
+.DS_Store
+.tmp-test/

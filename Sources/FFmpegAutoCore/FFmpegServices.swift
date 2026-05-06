@@ -33,10 +33,38 @@ public struct FFmpegLocator: FFmpegLocating {
     }
 }
 
+public actor FFmpegProcessHandle {
+    private var processIdentifier: Int32?
+
+    public init() {}
+
+    func bind(_ pid: Int32) {
+        processIdentifier = pid
+    }
+
+    public func terminate() {
+        guard let pid = processIdentifier, pid > 0 else { return }
+        kill(pid, SIGTERM)
+    }
+
+    public func forceKill() {
+        guard let pid = processIdentifier, pid > 0 else { return }
+        kill(pid, SIGKILL)
+    }
+
+    public func currentProcessIdentifier() -> Int32? {
+        processIdentifier
+    }
+}
+
 public final class FFmpegRunner: FFmpegRunning {
     public init() {}
 
     public func run(command: FFmpegCommand, logHandler: @escaping @Sendable (String) -> Void) async throws -> FFmpegResult {
+        try await run(command: command, processHandle: nil, logHandler: logHandler)
+    }
+
+    public func run(command: FFmpegCommand, processHandle: FFmpegProcessHandle?, logHandler: @escaping @Sendable (String) -> Void) async throws -> FFmpegResult {
         try await withCheckedThrowingContinuation { continuation in
             let process = Process()
             let stdoutPipe = Pipe()
@@ -70,6 +98,10 @@ public final class FFmpegRunner: FFmpegRunning {
 
             do {
                 try process.run()
+                if let processHandle {
+                    let pid = process.processIdentifier
+                    Task.detached { await processHandle.bind(pid) }
+                }
             } catch {
                 stdoutPipe.fileHandleForReading.readabilityHandler = nil
                 stderrPipe.fileHandleForReading.readabilityHandler = nil

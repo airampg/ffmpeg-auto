@@ -1,4 +1,5 @@
 import Foundation
+import FFmpegAutoCore
 
 @MainActor
 public final class AppViewModel: ObservableObject {

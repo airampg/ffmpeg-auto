@@ -1,5 +1,6 @@
 import Foundation
 import FFmpegAutoCore
+import FFmpegAutoCoreMac
 
 @MainActor
 struct TestRunner {

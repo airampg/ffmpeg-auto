@@ -1,5 +1,6 @@
 import SwiftUI
 import FFmpegAutoCore
+import FFmpegAutoCoreMac
 
 @main
 struct FFmpegAutoApp: App {

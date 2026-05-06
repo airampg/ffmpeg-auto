@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import FFmpegAutoCore
 
 public struct FinderService: FinderOpening {
     public init() {}

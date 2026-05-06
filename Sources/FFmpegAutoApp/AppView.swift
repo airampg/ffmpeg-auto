@@ -1,5 +1,6 @@
 import SwiftUI
 import FFmpegAutoCore
+import FFmpegAutoCoreMac
 
 struct AppView: View {
     @StateObject var viewModel: AppViewModel

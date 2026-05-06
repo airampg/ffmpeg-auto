@@ -6,6 +6,13 @@ public protocol FFmpegLocating {
 
 public protocol FFmpegRunning {
     func run(command: FFmpegCommand, logHandler: @escaping @Sendable (String) -> Void) async throws -> FFmpegResult
+    func run(command: FFmpegCommand, processHandle: FFmpegProcessHandle?, logHandler: @escaping @Sendable (String) -> Void) async throws -> FFmpegResult
+}
+
+public extension FFmpegRunning {
+    func run(command: FFmpegCommand, processHandle: FFmpegProcessHandle?, logHandler: @escaping @Sendable (String) -> Void) async throws -> FFmpegResult {
+        try await run(command: command, logHandler: logHandler)
+    }
 }
 
 public protocol FinderOpening {

@@ -103,6 +103,34 @@ public struct AudioConversionSettings: Equatable {
     public var extraFFmpegArgumentsText: String
     public var ffmpegPathOverride: String
 
+    public init(
+        audioOnly: Bool,
+        codec: AudioCodec,
+        container: OutputContainer,
+        bitrate: String,
+        sampleRate: Int,
+        channelCount: AudioChannelCount,
+        filenamePrefix: String,
+        resetTimestamps: Bool,
+        collisionPolicy: OutputCollisionPolicy,
+        loudnessNormalizationEnabled: Bool,
+        extraFFmpegArgumentsText: String,
+        ffmpegPathOverride: String
+    ) {
+        self.audioOnly = audioOnly
+        self.codec = codec
+        self.container = container
+        self.bitrate = bitrate
+        self.sampleRate = sampleRate
+        self.channelCount = channelCount
+        self.filenamePrefix = filenamePrefix
+        self.resetTimestamps = resetTimestamps
+        self.collisionPolicy = collisionPolicy
+        self.loudnessNormalizationEnabled = loudnessNormalizationEnabled
+        self.extraFFmpegArgumentsText = extraFFmpegArgumentsText
+        self.ffmpegPathOverride = ffmpegPathOverride
+    }
+
     public static let transcriptionDefault = AudioConversionSettings(
         audioOnly: true,
         codec: .aac,

@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+:root {
+  --color-accent: #21b2a3;
+}
+
+html, body, #root { height: 100%; }
+body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+
+.text-accent { color: var(--color-accent); }
+.bg-accent { background-color: var(--color-accent); }
+.border-accent { border-color: var(--color-accent); }
+
+.font-mono { font-family: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace; }
