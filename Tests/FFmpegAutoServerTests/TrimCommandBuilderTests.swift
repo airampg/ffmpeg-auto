@@ -47,24 +47,27 @@ final class TrimCommandBuilderTests: XCTestCase {
         XCTAssertFalse(args.contains("-to"))
     }
 
-    func test_trimEndOnly_addsToAfterInput() {
+    func test_trimEndOnly_addsToBeforeInput() {
         let conversion = makeConversion(trimEnd: 90.25)
         let args = FFmpegCommandBuilder().build(from: conversion).arguments
-        XCTAssertEqual(args[0], "-i")
-        XCTAssertEqual(args[1], inputURL.path)
-        XCTAssertEqual(args[2], "-to")
-        XCTAssertEqual(args[3], "90.250")
+        XCTAssertEqual(args[0], "-to")
+        XCTAssertEqual(args[1], "90.250")
+        XCTAssertEqual(args[2], "-i")
+        XCTAssertEqual(args[3], inputURL.path)
     }
 
-    func test_bothTrim_ssBeforeInputAndToAfterInput() {
+    func test_bothTrim_ssAndToBothBeforeInput() {
         let conversion = makeConversion(trimStart: 30, trimEnd: 90)
         let args = FFmpegCommandBuilder().build(from: conversion).arguments
         XCTAssertEqual(args[0], "-ss")
         XCTAssertEqual(args[1], "30.000")
-        XCTAssertEqual(args[2], "-i")
-        XCTAssertEqual(args[3], inputURL.path)
-        XCTAssertEqual(args[4], "-to")
-        XCTAssertEqual(args[5], "90.000")
+        XCTAssertEqual(args[2], "-to")
+        XCTAssertEqual(args[3], "90.000")
+        XCTAssertEqual(args[4], "-i")
+        XCTAssertEqual(args[5], inputURL.path)
+        let toIndex = args.firstIndex(of: "-to")!
+        let inputIndex = args.firstIndex(of: "-i")!
+        XCTAssertLessThan(toIndex, inputIndex, "-to must precede -i so it acts as input option")
     }
 
     func test_trimStartZero_omitsSsFlag() {
@@ -72,6 +75,9 @@ final class TrimCommandBuilderTests: XCTestCase {
         let args = FFmpegCommandBuilder().build(from: conversion).arguments
         XCTAssertFalse(args.contains("-ss"))
         XCTAssertTrue(args.contains("-to"))
+        let toIndex = args.firstIndex(of: "-to")!
+        let inputIndex = args.firstIndex(of: "-i")!
+        XCTAssertLessThan(toIndex, inputIndex)
     }
 
     func test_subSecondPrecision_formatsThreeDecimals() {

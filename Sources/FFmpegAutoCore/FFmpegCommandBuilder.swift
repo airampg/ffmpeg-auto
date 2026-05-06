@@ -6,19 +6,20 @@ public struct FFmpegCommandBuilder {
     public func build(from conversion: ValidatedConversion) -> FFmpegCommand {
         var arguments: [String] = []
 
-        // -ss before -i = input-seek (fast). With ffmpeg >= 4.0 this is also accurate
-        // to the sub-second, so we don't need -accurate_seek.
+        // Both -ss and -to go BEFORE -i so they act as input options:
+        //   -ss = stop reading the input until position
+        //   -to = stop reading the input AT position (absolute input timestamp)
+        // Placed after -i, -to becomes an output option meaning "stop writing when
+        // the OUTPUT duration reaches X", which combined with -ss before -i causes
+        // the end mark to be ignored once the input is exhausted.
         if let start = conversion.trimStartSeconds, start > 0 {
             arguments += ["-ss", Self.formatTimestamp(start)]
         }
-
-        arguments += ["-i", conversion.inputFile.path]
-
-        // -to after -i is interpreted as an absolute timestamp on the input when used
-        // together with -ss before -i, which is the behaviour we want.
         if let end = conversion.trimEndSeconds {
             arguments += ["-to", Self.formatTimestamp(end)]
         }
+
+        arguments += ["-i", conversion.inputFile.path]
 
         let settings = conversion.settings
 
